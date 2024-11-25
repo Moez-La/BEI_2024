@@ -1,0 +1,25 @@
+{
+    "_comments": {
+        "length": "Length of the vehicle (in meters)",
+        "width": "in meters",
+        "height": "in meters",
+        "mass": "Vehicle mass (Kg)",
+        "torque": "Torque (in Nm)",
+        "wheel_radius": "Wheel radius (in meters)",
+        "friction_coefficient": "Friction coefficient proportionate to the velocity",
+        "air_density": "air density (g/cm^3)",
+        "Cd": "Aerodynamic coefficient",
+        "threshold_stop": "Braking threshold"
+    },
+    "length": 6, 
+    "width": 2.6,
+    "height": 3.9,
+    "mass": 10000,
+    "torque": 2210,
+    "wheel_radius": 0.225,
+    "friction_coefficient": 0.5,
+    "air_density": 1.23,
+    "Cd": 0.6,
+    "threshold_stop": 0.1
+  }
+  
