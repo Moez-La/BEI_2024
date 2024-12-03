@@ -142,7 +142,7 @@ class Interface(QWidget):
         )
         self.plot_simulator.plot(
             left_x2, left_y2,
-            pen=pg.mkPen('b', width=2, style=pg.QtCore.Qt.DashLine),  # red line for left border2
+            pen=pg.mkPen('b', width=2,style=pg.QtCore.Qt.DashLine ),  # red line for left border2
             name="Left_border2"
         )
         self.plot_simulator.plot(
@@ -242,7 +242,10 @@ class Interface(QWidget):
             self.manual_mode = False
             self.manual_mode_button.setStyleSheet("background-color: lightgray")
         else:
+            self.autopilot_is_pushed = False
             self.autopilot.setStyleSheet("background-color: lightgray")
+            self.manual_mode = True
+            self.manual_mode_button.setStyleSheet("background-color: green;")
 
     def toggle_manual_mode(self):
         """Toggles manual mode."""
@@ -252,7 +255,10 @@ class Interface(QWidget):
             self.autopilot_is_pushed = False
             self.autopilot.setStyleSheet("background-color: lightgray")
         else:
+            self.manual_mode = False
             self.manual_mode_button.setStyleSheet("background-color: lightgray")
+            self.autopilot_is_pushed = True
+            self.autopilot.setStyleSheet("background-color: green;")
 
     def keyPressEvent(self, event):
         """
