@@ -16,7 +16,7 @@ class StarterCode(QWidget):
     def __init__(self):
         super().__init__()
         self.time = 0
-        self.setWindowTitle("Vehicle Control")
+        self.setWindowTitle("Vehicle Control with Stanely")
 
         # Create the main layout
         layout = QVBoxLayout(self)
@@ -63,7 +63,7 @@ class Interface(QWidget):
         super().__init__()
 
         # Generate the trajectory using wpimath
-        self.path, self.left_border, self.left_border1, self.left_border2, self.right_border = generate_trajectory()
+        self.path, self.left_border, self.right_border = generate_trajectory()
 
         # Temporary storage for plotting
         self.time = 0
@@ -122,12 +122,10 @@ class Interface(QWidget):
         """Plots the trajectory on the simulator."""
         path_x, path_y = zip(*self.path)
         left_x, left_y = zip(*self.left_border)
-        left_x1, left_y1 = zip(*self.left_border1)
-        left_x2, left_y2 = zip(*self.left_border2)
         right_x, right_y = zip(*self.right_border)
         self.plot_simulator.plot(
             path_x, path_y,
-            pen=pg.mkPen('b', width=2, style=pg.QtCore.Qt.DashLine),  # Blue line for trajectory
+            pen=pg.mkPen('b', width=2),  # Blue line for trajectory
             name="Path"
         )
         self.plot_simulator.plot(
@@ -136,24 +134,11 @@ class Interface(QWidget):
             name="Left_border"
         )
         self.plot_simulator.plot(
-            left_x1, left_y1,
-            pen=pg.mkPen('w', width=2),  # red line for left border1
-            name="Left_border1"
-        )
-        self.plot_simulator.plot(
-            left_x2, left_y2,
-            pen=pg.mkPen('b', width=2, style=pg.QtCore.Qt.DashLine),  # red line for left border2
-            name="Left_border2"
-        )
-        self.plot_simulator.plot(
             right_x, right_y,
             pen=pg.mkPen('r', width=2),  # red line for right border
             name="Right_border"
         )
     def lateral_control(self):
-        """
-        Lateral control to calculate steering angle based on the trajectory.
-        """
         if not self.path or not self.pos_x_temp or not self.pos_y_temp:
             return 0
 
@@ -164,22 +149,34 @@ class Interface(QWidget):
         distances = [np.linalg.norm(current_pos - np.array(p)) for p in self.path]
         closest_idx = np.argmin(distances)
 
-        # Select the next target point
-        next_idx = (closest_idx + 1) % len(self.path)
-        target_point = np.array(self.path[next_idx])
+        # Select the target point (lookahead can be adjusted)
+        lookahead_distance = 1.0  # Example: fixed lookahead distance
+        target_idx = (closest_idx + int(lookahead_distance / 0.1)) % len(self.path)  # Assuming path resolution of 0.1
+        target_point = np.array(self.path[target_idx])
 
-        # Calculate the required steering angle
+        # Calculate heading error
         path_vector = target_point - current_pos
-        desired_angle = np.arctan2(path_vector[1], path_vector[0])
-
-        # Angular error
+        path_angle = np.arctan2(path_vector[1], path_vector[0])
         current_angle = self.theta_temp[-1]
-        angle_error = desired_angle - current_angle
-        angle_error = np.arctan2(np.sin(angle_error), np.cos(angle_error))  # Normalize to [-pi, pi]
+        heading_error = path_angle - current_angle
+        heading_error = np.arctan2(np.sin(heading_error), np.cos(heading_error))  # Normalize to [-pi, pi]
 
-        # Proportional control for steering angle
-        k_p = 2.0
-        steering_angle = k_p * angle_error
+        # Calculate cross-track error
+        path_start = np.array(self.path[closest_idx])
+        path_end = np.array(self.path[(closest_idx + 1) % len(self.path)])
+        path_direction = path_end - path_start
+        path_normal = np.array([-path_direction[1], path_direction[0]])
+        path_normal = path_normal / np.linalg.norm(path_normal)
+        cross_track_error = np.dot(current_pos - path_start, path_normal)
+
+        # Stanley control law
+        k_stanley = 1.0  # Gain for Stanley method
+        cross_track_steering = np.arctan2(k_stanley * cross_track_error, 1 + self.velocity_temp[-1])
+
+        # Final steering angle
+        steering_angle = heading_error + cross_track_steering
+        steering_angle = np.arctan2(np.sin(steering_angle), np.cos(steering_angle))  # Normalize to [-pi, pi]
+
         return steering_angle
 
     def update_manual_control(self):
